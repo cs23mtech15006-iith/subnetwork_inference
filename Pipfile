@@ -10,10 +10,11 @@ matplotlib = "*"
 scikit-learn = "*"
 pillow = "*"
 torchvision = "*"
-numpy = "*"
 backpack-for-pytorch = "*"
 pyyaml = "*"
 pandas = "*"
+seaborn = "*"
+numpy = "*"
 
 [dev-packages]
 
