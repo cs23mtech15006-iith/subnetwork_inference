@@ -72,7 +72,7 @@ class Laplace(nn.Module):
             self.H = torch.zeros((D, D)).to(device=self.device, non_blocking=True)
 
         for inputs, _ in tqdm(train_loader):
-            if self.device is not None and self.device is not 'cpu':
+            if self.device is not None and self.device != 'cpu':
                 inputs = inputs.to(device=self.device, non_blocking=True)
 
             compute_ggn_batched(
