@@ -3,6 +3,7 @@ import copy
 
 import torch
 from torchvision import datasets, transforms
+from torchvision.transforms import InterpolationMode
 
 from src.utils import np_get_one_hot, DatafeedImage
 
@@ -154,32 +155,32 @@ def rotate_load_dataset(dname, angle, data_dir='../../data', batch_size=256, cud
 
     transform_dict = {
         'MNIST': transforms.Compose([
-            transforms.RandomRotation([angle, angle], resample=2, expand=False, center=None),
+            transforms.RandomRotation([angle, angle], interpolation=InterpolationMode.BICUBIC, expand=False, center=None),
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.1307,), std=(0.3081,))
         ]),
         'Fashion': transforms.Compose([
-            transforms.RandomRotation([angle, angle], resample=2, expand=False, center=None),
+            transforms.RandomRotation([angle, angle], interpolation=InterpolationMode.BICUBIC, expand=False, center=None),
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.2860,), std=(0.3530,))
         ]),
         'SVHN': transforms.Compose([
-            transforms.RandomRotation([angle, angle], resample=2, expand=False, center=None),
+            transforms.RandomRotation([angle, angle], interpolation=InterpolationMode.BICUBIC, expand=False, center=None),
             transforms.ToTensor(),
             transforms.Normalize((0.4377, 0.4438, 0.4728), (0.1980, 0.2010, 0.1970)),
         ]),
         'CIFAR10': transforms.Compose([
-            transforms.RandomRotation([angle, angle], resample=2, expand=False, center=None),
+            transforms.RandomRotation([angle, angle], interpolation=InterpolationMode.BICUBIC, expand=False, center=None),
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),
         ]),
         'CIFAR100': transforms.Compose([
-            transforms.RandomRotation([angle, angle], resample=2, expand=False, center=None),
+            transforms.RandomRotation([angle, angle], interpolation=InterpolationMode.BICUBIC, expand=False, center=None),
             transforms.ToTensor(),
             transforms.Normalize((0.5071, 0.4866, 0.4409), (0.2673, 0.2564, 0.2762)),
         ]),
         'EMNIST': transforms.Compose([
-            transforms.RandomRotation([angle, angle], resample=2, expand=False, center=None),
+            transforms.RandomRotation([angle, angle], interpolation=InterpolationMode.BICUBIC, expand=False, center=None),
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.1751,), std=(0.3332,))
         ]),

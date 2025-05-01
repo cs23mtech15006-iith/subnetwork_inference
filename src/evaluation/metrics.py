@@ -111,7 +111,7 @@ def classification_rejection(logprob_vec, source_labels_vec, source_entropy, tar
     return np.array(err_props)
 
 
-def get_all_classification_stats(logprob_vec, target_vec, target_logrobs):
+def get_all_classification_stats(logprob_vec, target_vec, target_logprobs=None):
 
     brier = class_brier(y=target_vec, log_probs=logprob_vec, probs=None)
     err = class_err(y=target_vec, model_out=logprob_vec)
@@ -119,9 +119,9 @@ def get_all_classification_stats(logprob_vec, target_vec, target_logrobs):
     ece = class_ECE(y=target_vec, log_probs=logprob_vec, probs=None, nbins=10)
     return_dict = {"err": err, "ll": ll, "brier": brier, "ece": ece}
 
-    if target_logrobs is not None:
+    if target_logprobs is not None:
         source_entropy = entropy_from_logprobs(logprob_vec).cpu().numpy()
-        target_entropy = entropy_from_logprobs(target_logrobs).cpu().numpy()
+        target_entropy = entropy_from_logprobs(target_logprobs).cpu().numpy()
 
         fpr, tpr, roc_auc = get_roc_params(source_entropy, target_entropy)
 
