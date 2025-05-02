@@ -44,3 +44,29 @@ def compute_wasserstein_swag_weight_score_vec(model, train_loader, batchnorm_lay
     loss_func = get_loss_func(loss).to(device)
     swag_model = fit_swag(copy.deepcopy(model), device, train_loader, loss_func, diag_only=True, max_num_models=n_snapshots, swa_lr=swa_lr, swa_c_epochs=swa_c_epochs, swa_c_batches=swa_c_batches, parallel=parallel)
     return swag_model.get_variance_vector(batchnorm_layers)
+
+
+def snr_mask(model, batchnorm_layers, n_weights_subnet, train_loader, device, loss="cross_entropy", n_snapshots=256, swag_lr=1e-2, swag_c_epochs=1, swag_c_batches=None, parallel=False, last_layer=False):
+    device = "cuda:0" if device is None else device
+
+    weight_score_vec = compute_wasserstein_swag_weight_score_vec(model, train_loader, batchnorm_layers, device=device, loss=loss, n_snapshots=n_snapshots,
+                                                                swa_lr=swag_lr, swa_c_epochs=swag_c_epochs, swa_c_batches=swag_c_batches, parallel=parallel)
+    
+    # Note: In case of Wassertein distance, we want the weights with the highest scores
+    # However, in case of SNR, the variance is in the denominator. So the lower the score, the higher the variance is.
+    # So we want the nodes with lowest scores for uncertainty calculation
+    weight_score_vec = - weight_score_vec
+
+    return get_mask_from_weight_score_vec(model, weight_score_vec, n_weights_subnet, batchnorm_layers, largest=True, last_layer=last_layer)
+
+
+def compute_snr_swag_weight_score_vec(model, train_loader, batchnorm_layers, device, loss, n_snapshots, swa_lr, swa_c_epochs, swa_c_batches, parallel, epsilon = 1e-8):
+    """ compute weight score vector required for SNR pruning strategy using SWAG for mean and variance estimation """
+    loss_func = get_loss_func(loss).to(device)
+    swag_model = fit_swag(copy.deepcopy(model), device, train_loader, loss_func, diag_only=True, max_num_models=n_snapshots, swa_lr=swa_lr, swa_c_epochs=swa_c_epochs, swa_c_batches=swa_c_batches, parallel=parallel)
+    
+    mean_vec = swag_model.get_mean_vector(batchnorm_layers)
+    var_vec = swag_model.get_variance_vector(batchnorm_layers)
+
+    snr_vec = torch.pow(mean_vec, 2) / (var_vec + epsilon) # Adding epsilon to avoid divide by zero
+    return snr_vec
