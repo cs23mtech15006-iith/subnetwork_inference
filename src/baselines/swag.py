@@ -120,7 +120,8 @@ class SWAG(torch.nn.Module):
         for module, name in self.params:
             name_full = name.replace("-", ".")
             name_full = name_full.replace('module.', '')
-            if 'weight' in name_full and name_full not in batchnorm_layers:
+            # if 'weight' in name_full and name_full not in batchnorm_layers:
+            if 'weight' in name_full and not any(bn in name_full for bn in batchnorm_layers): #sd_
                 mean = module.__getattr__("%s_mean" % name)
                 sq_mean = module.__getattr__("%s_sq_mean" % name)
 
