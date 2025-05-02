@@ -1,5 +1,6 @@
 import torch
 from src.utils import unflatten_nn, flatten_nn, get_last_layer
+from src.baselines.swag import SWAG
 
 def get_mask_from_weight_score_vec(model, weight_score_vec, n_weights_subnet, batchnorm_layers, largest, last_layer=False):
     """ compute mask based on the provided weight score vector """
@@ -45,55 +46,86 @@ def sample_mask_from_weight_score_vec(model, weight_score_vec, n_weights_subnet,
 
 
 def get_mask_from_layer_aware_weight_score_vec(model, weight_score_vec, n_weights_subnet, batchnorm_layers, largest, last_layer=False):
-    """ Compute mask using layer-aware reweighting of the score vector.
-    
-    Applies layer-priority scaling to the weight score vector before selecting top-k weights.
-    The most recent layer gets the highest priority (scaling factor of 1), and earlier layers are
-    scaled by successive powers of 0.9.
-    """
+    """ Compute mask using layer-aware reweighting of the score vector. """
+
     assert torch.all(weight_score_vec >= 0)
 
-    # Flatten the model and keep track of layer-wise parameter boundaries
-    layer_param_sizes = []
-    flat_params = []
-    for layer in model.modules():
-        if isinstance(layer, torch.nn.Linear) or (layer not in batchnorm_layers):
-            layer_flat = flatten_nn(layer, [])
-            if layer_flat.numel() > 0:
-                layer_param_sizes.append(layer_flat.numel())
-                flat_params.append(layer_flat)
-    assert sum(layer_param_sizes) == weight_score_vec.numel()
+    # Collect param sizes per layer (excluding batchnorm layers)
+    # layer_param_sizes = []
+    # for name, module in model.named_modules():
+    #     if isinstance(module, torch.nn.Linear) or (module not in batchnorm_layers):
+    #         layer_params = [p for n, p in module.named_parameters(recurse=False) if p.requires_grad]
+    #         flat_size = sum(p.numel() for p in layer_params)
+    #         if flat_size > 0:
+    #             layer_param_sizes.append(flat_size)
+    layer_param_sizes = get_layer_param_sizes(model, batchnorm_layers)
 
-    # Assign layer weights: newer layers get higher priority
+    assert sum(layer_param_sizes) == weight_score_vec.numel(), \
+        f"Mismatch: {sum(layer_param_sizes)} != {weight_score_vec.numel()}"
+
+    # Assign layer priority weights
     n_layers = len(layer_param_sizes)
-    layer_weights = [0.9 ** (n_layers - 1 - i) for i in range(n_layers)]
+    # layer_weights = [0.9 ** (n_layers - 1 - i) for i in range(n_layers)]
+    layer_weights = [0.5 ** (n_layers - 1 - i) for i in range(n_layers)]
 
-    # Build a full weight adjustment vector based on layer-wise scaling
+    # Build layer-aware weight vector
     layer_weight_vec = torch.cat([
-        torch.full((size,), fill_value=layer_weights[i], device=weight_score_vec.device)
+        torch.full((size,), layer_weights[i], device=weight_score_vec.device)
         for i, size in enumerate(layer_param_sizes)
     ])
 
-    assert layer_weight_vec.shape == weight_score_vec.shape
-
-    # Apply layer-aware weighting
     adjusted_score_vec = weight_score_vec * layer_weight_vec
 
-    # Continue as in the original function
+    # Truncate to last layer if needed
     if last_layer:
         D_last_layer = flatten_nn(get_last_layer(model), []).shape[0]
         adjusted_score_vec = adjusted_score_vec[-D_last_layer:]
-        weight_score_vec = weight_score_vec[-D_last_layer:]  # for return
+        weight_score_vec = weight_score_vec[-D_last_layer:]
         batchnorm_layers = []
 
+    # Select top-k indices
     idx = torch.argsort(adjusted_score_vec, descending=largest)[:n_weights_subnet]
     idx = idx.sort()[0]
     mask_vec = torch.zeros_like(adjusted_score_vec)
     mask_vec[idx] = 1.
 
-    # Reconstruct layer-wise binary mask
+    # Unflatten to layer-wise mask
     model_ = get_last_layer(model) if last_layer else model
     mask = unflatten_nn(model_, batchnorm_layers, mask_vec)
 
-    return mask, idx, weight_score_vec  # return original score vec (not adjusted one)
+    return mask, idx, weight_score_vec
 
+# def get_layer_param_sizes(model, batchnorm_layers):
+#     sizes = []
+#     for name, param in model.named_parameters():
+#         if any(bn in name for bn in batchnorm_layers):
+#             continue
+#         sizes.append(param.numel())
+#     return sizes
+
+# def get_layer_param_sizes(model, batchnorm_layers_set):
+#     return [param.numel() for name, param in model.named_parameters()
+#             if name not in batchnorm_layers_set]
+
+def get_layer_param_sizes(model, batchnorm_layers_set):
+    sizes = []
+    swag_model = None
+    for name, module in model.named_modules():
+        if isinstance(module, SWAG):
+            swag_model = module
+            break
+
+    if swag_model:
+        for mod, param_name_swag in swag_model.params:
+            full_name_swag = param_name_swag.replace("-", ".")
+            if 'weight' in full_name_swag and full_name_swag not in batchnorm_layers_set:
+                param = mod._buffers.get(f"{param_name_swag.split('-')[-1]}_mean") # Access a buffer to get size
+                if param is not None:
+                    sizes.append(param.numel())
+    else:
+        for name, param in model.named_parameters():
+            if 'weight' in name and name not in batchnorm_layers_set:
+                sizes.append(param.numel())
+
+    print(f"Total weight parameters counted (get_layer_param_sizes): {sum(sizes)}")
+    return sizes
