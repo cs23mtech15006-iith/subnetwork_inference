@@ -55,7 +55,7 @@ def snr_mask(model, batchnorm_layers, n_weights_subnet, train_loader, device, lo
     # Note: In case of Wassertein distance, we want the weights with the highest scores
     # However, in case of SNR, the variance is in the denominator. So the lower the score, the higher the variance is.
     # So we want the nodes with lowest scores for uncertainty calculation
-    weight_score_vec = - weight_score_vec
+    weight_score_vec = torch.max(weight_score_vec) - weight_score_vec
 
     return get_mask_from_weight_score_vec(model, weight_score_vec, n_weights_subnet, batchnorm_layers, largest=True, last_layer=last_layer)
 
