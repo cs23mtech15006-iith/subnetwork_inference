@@ -49,7 +49,7 @@ def compute_wasserstein_swag_weight_score_vec(model, train_loader, batchnorm_lay
 def snr_mask(model, batchnorm_layers, n_weights_subnet, train_loader, device, loss="cross_entropy", n_snapshots=256, swag_lr=1e-2, swag_c_epochs=1, swag_c_batches=None, parallel=False, last_layer=False):
     device = "cuda:0" if device is None else device
 
-    weight_score_vec = compute_wasserstein_swag_weight_score_vec(model, train_loader, batchnorm_layers, device=device, loss=loss, n_snapshots=n_snapshots,
+    weight_score_vec = compute_snr_swag_weight_score_vec(model, train_loader, batchnorm_layers, device=device, loss=loss, n_snapshots=n_snapshots,
                                                                 swa_lr=swag_lr, swa_c_epochs=swag_c_epochs, swa_c_batches=swag_c_batches, parallel=parallel)
     
     # Note: In case of Wassertein distance, we want the weights with the highest scores
