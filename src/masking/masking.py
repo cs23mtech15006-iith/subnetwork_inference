@@ -31,7 +31,7 @@ def smallest_magnitude_mask(model, batchnorm_layers, n_weights_subnet, last_laye
     return get_mask_from_weight_score_vec(model, weight_score_vec, n_weights_subnet, batchnorm_layers, largest=True, last_layer=last_layer)
 
 
-def wasserstein_mask(model, batchnorm_layers, n_weights_subnet, train_loader, device, loss="cross_entropy", n_snapshots=256, swag_lr=1e-2, swag_c_epochs=1, swag_c_batches=None, parallel=False, last_layer=False, weight_score_vec=None, layer_weight=None):
+def wasserstein_mask(model, batchnorm_layers, n_weights_subnet, train_loader, device, loss="cross_entropy", n_snapshots=256, swag_lr=1e-2, swag_c_epochs=1, swag_c_batches=None, parallel=False, last_layer=False, weight_score_vec=None, layer_weight=None, scaling_factor=0.9):
 
     device = "cuda:0" if device is None else device
     if not weight_score_vec:
@@ -56,7 +56,8 @@ def wasserstein_mask(model, batchnorm_layers, n_weights_subnet, train_loader, de
                                                                                     batchnorm_layers,
                                                                                     largest=True,
                                                                                     last_layer=last_layer,
-                                                                                    mode=layer_weight)
+                                                                                    mode=layer_weight,
+                                                                                    scaling_factor=scaling_factor)
 
         else:
             mask, idx, weight_score_vec = get_mask_from_weight_score_vec(model,
