@@ -5,6 +5,8 @@ __pycache__/
 notebooks/.ipynb_checkpoints/
 notebooks/data/
 notebooks/resnet18_MNIST/
+notebooks/results/
+notebooks/Results*.csv
 
 .env
 local/
