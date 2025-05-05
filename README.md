@@ -29,6 +29,14 @@ We took inspiration from the repository published by the authors of the paper _B
 
 The _src_ directory contains all the necessary helper functions for the implementation. And the model creation, training and evaluation is done in the file `notebooks/evaluate.ipynb`.
 
-# References
+## Hardware used
+
+We ran the evaluation on a machine with the following configuration:
+
+GPU specs: NVIDIA RTX A6000 (48GB VRAM)
+CPU specs: 8 vCPU
+RAM: 60 GB RAM
+
+## References
 
 1. Bayesian deep learning via subnetwork inference, Daxberger, Erik, et al. "Bayesian deep learning via subnetwork inference." International Conference on Machine Learning. PMLR, 2021.
