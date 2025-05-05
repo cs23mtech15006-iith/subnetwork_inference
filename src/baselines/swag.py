@@ -15,6 +15,9 @@ def fit_swag(model, device, train_loader, loss_func, diag_only=True, max_num_mod
     (adapted from https://github.com/wjmaddox/swa_gaussian/blob/master/experiments/train/run_swag.py)
 
     Args:
+        device: the device to run the models on - 'cpu' or 'cuda'
+        train_loader: Dataloader for train dataset
+        loss_func: Instance of nn.CrossEntropyLoss or nn.BCELoss or nn.MSELoss
         diag_only: bool flag to only store diagonal of SWAG covariance matrix (Default: True)
         max_num_models: int for maximum number of SWAG models to save (Default: 20)
         swa_c_epochs: int for SWA model collection frequency/cycle length in epochs (Default: 1)
@@ -120,7 +123,7 @@ class SWAG(torch.nn.Module):
         for module, name in self.params:
             name_full = name.replace("-", ".")
             name_full = name_full.replace('module.', '')
-            if 'weight' in name_full and name_full not in batchnorm_layers:
+            if 'weight' in name_full and not any(bn in name_full for bn in batchnorm_layers):
                 mean = module.__getattr__("%s_mean" % name)
                 sq_mean = module.__getattr__("%s_sq_mean" % name)
 
