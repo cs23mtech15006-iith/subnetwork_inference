@@ -385,32 +385,6 @@ def dict2csv(filename, dict):
     w = csv.writer(open(filename, "w"))
     for key, val in dict.items():
         w.writerow([key, val])
-
-
-def plot_results_1d_regression(x_view, X_train, y_train, mean, std, dpi=120):
-    import matplotlib.pyplot as plt
-    """ Plot results for 1D regression benchmark """
-
-    c = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-        '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
-
-    subsample = 1
-
-    plt.figure(dpi=dpi)
-    plt.scatter(X_train[::subsample], y_train[::subsample], s=5, alpha=0.5, c=c[0])
-    plt.plot(x_view, mean, c=c[3])
-
-
-    plt.fill_between(x_view[:, 0],
-                    (mean[:, 0] + std[:, 0]),
-                    (mean[:, 0] - std[:, 0]), color=c[3], alpha=0.3)
-
-    ylim = [min(min(mean[:, 0] - std[:, 0]) - 0.5, -4), max(max(mean[:, 0] + std[:, 0]) + 0.5, 4)]
-    ylim = [max(ylim[0], -5), min(ylim[1], 5)]
-    plt.ylim(ylim)
-    plt.xlim([min(x_view), max(x_view)])
-    plt.tight_layout()
-    plt.show()
     
 
 def get_n_data(dataloader):
