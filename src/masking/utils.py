@@ -45,7 +45,7 @@ def sample_mask_from_weight_score_vec(model, weight_score_vec, n_weights_subnet,
     return mask, idx, weight_score_vec
 
 
-def get_mask_from_layer_aware_weight_score_vec(model, weight_score_vec, n_weights_subnet, batchnorm_layers, largest, last_layer=False, mode='backward'):
+def get_mask_from_layer_aware_weight_score_vec(model, weight_score_vec, n_weights_subnet, batchnorm_layers, largest, last_layer=False, mode='backward', scaling_factor=0.9):
     """ Compute mask using layer-aware reweighting of the score vector. """
 
     assert torch.all(weight_score_vec >= 0)
@@ -58,9 +58,9 @@ def get_mask_from_layer_aware_weight_score_vec(model, weight_score_vec, n_weight
     # Assign layer priority weights
     n_layers = len(layer_param_sizes)
     if mode == 'backward': # highest weight to last layer
-        layer_weights = [0.9 ** (n_layers - 1 - i) for i in range(n_layers)]
+        layer_weights = [scaling_factor ** (n_layers - 1 - i) for i in range(n_layers)]
     else: # highest weight to 1st layer
-        layer_weights = [0.9 ** i for i in range(n_layers)]
+        layer_weights = [scaling_factor ** i for i in range(n_layers)]
 
     # Build layer-aware weight vector
     layer_weight_vec = torch.cat([
